@@ -1,4 +1,4 @@
-streamlit==1.25.0
-phi==0.6.7
-PyMuPDF==1.22.5
-python-dotenv==1.0.0
+streamlit
+phidata
+PyMuPDF
+python-dotenv
