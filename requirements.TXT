@@ -1,5 +1,4 @@
 streamlit
-groq
-phidata
-PyMuPDF
 python-dotenv
+PyMuPDF
+phi
