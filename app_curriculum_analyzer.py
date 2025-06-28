@@ -1,10 +1,10 @@
 import streamlit as st
-from phi.agent import Agent
-from phi.model.groq import Groq
+from phi.assistant import Assistant
+from phi.llm.groq import GroqLLM
 from dotenv import load_dotenv
 import fitz  # PyMuPDF
-import re
 import os
+import re
 
 # Carrega variáveis de ambiente
 load_dotenv()
@@ -62,21 +62,24 @@ for idx, pdf in enumerate([pdf1, pdf2, pdf3]):
         texto = extrair_texto_pdf_bytes(pdf.read())
         curriculos.append((f"Candidato {idx+1}", texto))
 
-# === Agente IA ===
+# === Agente IA com phi + groq ===
 if vaga_descricao and curriculos:
-    agente = Agent(
+    llm = GroqLLM(
+        model="mixtral-8x7b-32768",  # ou "llama3-70b-8192", "gemma-7b-it" etc.
+        api_key=os.getenv("GROQ_API_KEY")
+    )
+
+    assistente = Assistant(
         name="IA de RH",
-        role="Especialista em Recursos Humanos",
-        model=Groq(id="deepseek-r1-distill-llama-70b"),
+        llm=llm,
         instructions=[
             "Fale em português.",
             "Analise cada currículo comparando com a vaga descrita.",
             "Atribua uma pontuação de 0 a 100 de acordo com a compatibilidade.",
             "Destaque pontos fortes e fracos de cada candidato.",
             "Mostre o resultado em forma de tabela se possível.",
-            "Não use marcações como <think> ou <sistem>."
-        ],
-        markdown=True
+            "Não use marcações como <think> ou <system>."
+        ]
     )
 
     if st.button("🔍 Analisar Currículos"):
@@ -93,7 +96,7 @@ Agora, avalie os currículos abaixo:
             for nome, texto in curriculos:
                 prompt += f"\nCurrículo de {nome}:\n{texto}\n"
 
-            resposta = agente.run(prompt)
+            resposta = assistente.run(prompt)
             texto_limpo = re.sub(r"<[^>]+>", "", resposta.content).strip()
 
             st.markdown("### 🧠 Resultado da IA")
