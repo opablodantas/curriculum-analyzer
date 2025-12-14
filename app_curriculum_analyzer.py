@@ -1,20 +1,24 @@
 import streamlit as st
-from phi.assistant import Assistant
-from phi.llm.groq import GroqLLM
 from dotenv import load_dotenv
+from groq import Groq
 import fitz  # PyMuPDF
 import os
 import re
 
-# Carrega variáveis de ambiente
+# =========================
+# Configurações iniciais
+# =========================
 load_dotenv()
 
-# Configuração da página
 st.set_page_config(page_title="Currículo Analytics", layout="wide")
 st.title("📄 Currículo Analytics - Triagem Inteligente com IA")
 st.markdown("Auxílio ao RH na seleção de currículos com análise automatizada e comparativa.")
 
-# === Funções ===
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+# =========================
+# Funções
+# =========================
 @st.cache_data
 def extrair_texto_pdf_bytes(pdf_file_bytes):
     texto = ""
@@ -32,7 +36,47 @@ def extrair_texto_pdf_arquivo(caminho):
         texto += page.get_text()
     return texto
 
-# === Vaga: carregar PDF da pasta ===
+def analisar_curriculos(vaga_titulo, vaga_descricao, curriculos):
+    prompt = f"""
+Você é um especialista em recrutamento e seleção.
+
+Fale apenas em português.
+Não use marcações como <think>, <system> ou código.
+Se possível, apresente os resultados em formato de tabela.
+
+TÍTULO DA VAGA:
+{vaga_titulo}
+
+DESCRIÇÃO DA VAGA:
+{vaga_descricao}
+
+TAREFA:
+- Avalie cada currículo
+- Compare com os requisitos da vaga
+- Atribua uma nota de 0 a 100
+- Liste pontos fortes e pontos fracos
+
+CURRÍCULOS:
+"""
+
+    for nome, texto in curriculos:
+        prompt += f"\n---\nCurrículo de {nome}:\n{texto}\n"
+
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
+            {"role": "system", "content": "Você é um assistente de RH."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.4,
+        max_tokens=2000
+    )
+
+    return response.choices[0].message.content.strip()
+
+# =========================
+# Vagas
+# =========================
 pasta_vagas = "vagas"
 arquivos_vaga = [f for f in os.listdir(pasta_vagas) if f.endswith(".pdf")]
 
@@ -43,79 +87,49 @@ vaga_titulo = os.path.splitext(arquivo_vaga)[0].replace("_", " ").title()
 vaga_caminho = os.path.join(pasta_vagas, arquivo_vaga)
 vaga_descricao = extrair_texto_pdf_arquivo(vaga_caminho)
 
-# === Upload de currículos ===
+# =========================
+# Upload de currículos
+# =========================
 st.sidebar.markdown("---")
-st.sidebar.markdown("📤 Faça upload de até **3 currículos em PDF** para análise")
+st.sidebar.markdown("📤 Faça upload de até **3 currículos em PDF**")
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    pdf1 = st.file_uploader("PDF 1", type="pdf", key="pdf1")
+    pdf1 = st.file_uploader("PDF 1", type="pdf")
 with col2:
-    pdf2 = st.file_uploader("PDF 2", type="pdf", key="pdf2")
+    pdf2 = st.file_uploader("PDF 2", type="pdf")
 with col3:
-    pdf3 = st.file_uploader("PDF 3", type="pdf", key="pdf3")
+    pdf3 = st.file_uploader("PDF 3", type="pdf")
 
-# === Currículos: carregar texto ===
 curriculos = []
 for idx, pdf in enumerate([pdf1, pdf2, pdf3]):
     if pdf:
         texto = extrair_texto_pdf_bytes(pdf.read())
         curriculos.append((f"Candidato {idx+1}", texto))
 
-# === Agente IA com phi + groq ===
+# =========================
+# Execução da IA
+# =========================
 if vaga_descricao and curriculos:
-    llm = GroqLLM(
-        model="mixtral-8x7b-32768",  # ou "llama3-70b-8192", "gemma-7b-it" etc.
-        api_key=os.getenv("GROQ_API_KEY")
-    )
-
-    assistente = Assistant(
-        name="IA de RH",
-        llm=llm,
-        instructions=[
-            "Fale em português.",
-            "Analise cada currículo comparando com a vaga descrita.",
-            "Atribua uma pontuação de 0 a 100 de acordo com a compatibilidade.",
-            "Destaque pontos fortes e fracos de cada candidato.",
-            "Mostre o resultado em forma de tabela se possível.",
-            "Não use marcações como <think> ou <system>."
-        ]
-    )
-
     if st.button("🔍 Analisar Currículos"):
         with st.spinner("Analisando com IA..."):
+            resultado = analisar_curriculos(
+                vaga_titulo,
+                vaga_descricao,
+                curriculos
+            )
 
-            prompt = f"""Você é um assistente de RH. Abaixo está a descrição da vaga seguida dos currículos. Analise e compare:
-
-Título da vaga: {vaga_titulo}
-Descrição da vaga:
-{vaga_descricao}
-
-Agora, avalie os currículos abaixo:
-"""
-            for nome, texto in curriculos:
-                prompt += f"\nCurrículo de {nome}:\n{texto}\n"
-
-            resposta = assistente.run(prompt)
-            texto_limpo = re.sub(r"<[^>]+>", "", resposta.content).strip()
+            resultado = re.sub(r"<[^>]+>", "", resultado)
 
             st.markdown("### 🧠 Resultado da IA")
-            st.markdown(texto_limpo)
-
+            st.markdown(resultado)
 else:
-    st.info("Selecione uma vaga da lista e envie pelo menos um currículo.")
+    st.info("Selecione uma vaga e envie pelo menos um currículo.")
 
-# === Sobre o Projeto ===
-st.markdown("## ℹ️ Sobre o Projeto")
-st.markdown("""
-Enquanto estudava sobre agentes de inteligência artificial, percebi que muitos colegas de trabalho gastavam um tempo considerável analisando currículos individualmente — uma tarefa que, em teoria, deveria ser simples. Essa análise manual, repetitiva e demorada, frequentemente se tornava um gargalo no processo de seleção.
 
-Pensando em tornar essa etapa mais prática e eficiente, criei este projeto como uma ferramenta de suporte à equipe de RH. A proposta é oferecer uma solução que auxilie na triagem inicial de currículos, reduzindo o tempo de análise e aumentando as chances de encontrar o candidato ideal com mais agilidade e assertividade.
-""")
 
-# === Rodapé ===
 st.markdown("---")
 st.markdown(
-    'Projeto desenvolvido por [Pablo Dantas](https://www.linkedin.com/in/pablodantasevangelista/)', 
+    'Projeto desenvolvido por [Pablo Dantas](https://www.linkedin.com/in/pablodantasevangelista/)',
     unsafe_allow_html=True
 )
