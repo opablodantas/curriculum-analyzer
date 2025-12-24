@@ -1,99 +1,105 @@
 
 
-# Currículo Analytics - Triagem Inteligente com IA
+# 📄 Curriculum Analyzer — Triagem Inteligente com IA
 
-Currículo Analytics é uma aplicação de triagem de currículos desenvolvida para auxiliar equipes de RH na seleção de candidatos. O projeto utiliza **Inteligência Artificial** para analisar currículos em PDF (mas podendo facilmente adaptado para outros formatos caso seja necessário), comparando-os com os requisitos da vaga e gerando uma avaliação automatizada com notas, pontos fortes e fracos.
+O **Currículo Analytics** é uma aplicação web que utiliza **Inteligência Artificial** para apoiar equipes de **Recursos Humanos** na triagem inicial de currículos.
+A ferramenta compara currículos em PDF com uma vaga específica e gera uma análise clara, objetiva e automatizada, ajudando a ganhar tempo e reduzir vieses no processo seletivo.
 
----
-
-## Tecnologias Utilizadas
-
-* **Python**: Linguagem principal do projeto.
-* **Streamlit**:Framework para criação de interfaces web interativas.
-* **PyMuPDF (fitz)**: Biblioteca para leitura e extração de texto de arquivos PDF.
-* **Groq API**: Plataforma de IA utilizada para análise de currículos (modelo `llama-3.1-8b-instant`).
-* **python-dotenv**: Gerenciamento de variáveis de ambiente (como `GROQ_API_KEY`).
-* **re (Regex)**: Limpeza de texto gerado pela IA.
+A proposta do projeto é **simplificar decisões* e ajudar na tomada de decisões**, não substituí-las: a IA atua como apoio estratégico ao recrutador.
 
 ---
 
-## Estrutura do Projeto
+## 🚀 O que a aplicação faz:
+
+* Analisa currículos em PDF de forma automática
+* Compara cada currículo com os requisitos da vaga
+* Atribui notas de compatibilidade (0 a 100)
+* Destaca pontos fortes e pontos de atenção de cada candidato
+* Apresenta os resultados diretamente na interface, de forma clara e organizada
+
+Tudo isso acontece em poucos segundos, sem necessidade de conhecimento técnico por parte do usuário.
+
+---
+
+## 🧠 Como funciona (visão geral)
+
+1. O recrutador seleciona uma vaga (nesse caso, as vagas estão em formato PDF)
+2. Faz upload de até **3 currículos**
+3. A IA analisa os documentos com base nos critérios da vaga
+4. O sistema retorna uma avaliação comparativa dos candidatos
+
+A análise é feita utilizando um **modelo de linguagem de grande porte (LLM)**, focado em leitura e interpretação de texto profissional.
+
+---
+
+## 🛠️ Tecnologias utilizadas
+
+* **Python** — linguagem principal do projeto
+* **Streamlit** — interface web interativa
+* **PyMuPDF (fitz)** — extração de texto de arquivos PDF
+* **Groq API** — motor de IA responsável pela análise dos currículos
+* **Regex (re)** — limpeza e organização do texto gerado
+
+A aplicação foi preparada para rodar localmente e também em **ambiente de produção no Streamlit Cloud**.
+
+---
+
+## 📂 Estrutura do projeto
 
 ```
 curriculo-analytics/
 │
-├─ vagas/                           # PDFs das vagas disponíveis
-├─ app_curriculum_analyzer.py       # Aplicação principal Streamlit
-├─ .env                             # Variáveis de ambiente (ex: GROQ_API_KEY)
-├─ requirements.txt                 # Dependências do projeto
-└─ README.md                        # Este arquivo
+├─ vagas/                     # PDFs das vagas disponíveis
+├─ app_curriculum_analyzer.py # Aplicação principal
+├─ requirements.txt           # Dependências do projeto
+└─ README.md                  # Documentação geral
 ```
 
 ---
 
-## Funcionalidades
+## ☁️ Configuração de ambiente
 
-1. **Upload de Vagas e Currículos**
+A aplicação utiliza **variáveis de ambiente seguras** para acessar a API de IA.
 
-   * Upload de PDFs de vagas para análise.
-   * Upload de até 3 currículos simultaneamente.
+* Em ambiente local ou produção, a chave deve ser fornecida como:
 
-2. **Extração de Texto de PDFs**
+  * `GROQ_API_KEY`
 
-   * Extração de texto via **PyMuPDF**, suportando upload de arquivos ou leitura local.
-
-3. **Análise de Currículos com IA**
-
-   * Avaliação automática comparando currículos com os requisitos da vaga.
-   * Geração de notas de 0 a 100, pontos fortes e pontos fracos de cada candidato.
-   * Resultados apresentados diretamente na interface Streamlit.
+No **Streamlit Cloud**, essa variável é configurada diretamente em **Settings → Secrets**, sem necessidade de arquivos `.env`.
 
 ---
 
-## Como Rodar o Projeto
+## ▶️ Executando a aplicação
 
-1. **Clone o repositório**
-
-```bash
-git clone https://github.com/seu-usuario/curriculo-analytics.git
-cd curriculo-analytics
-```
-
-2. **Instale as dependências**
-
-```bash
-pip install -r requirements.txt
-```
-
-3. **Configure a API Key do Groq**
-
-Crie um arquivo `.env` na raiz do projeto:
-
-```
-GROQ_API_KEY=sua_chave_aqui
-```
-
-4. **Execute a aplicação Streamlit**
+Após instalar as dependências, execute:
 
 ```bash
 streamlit run app_curriculum_analyzer.py
 ```
 
-5. **Acesse no navegador**
-   A aplicação estará disponível em `http://localhost:8501`.
+A aplicação ficará disponível no navegador em:
+
+```
+http://localhost:8501
+```
 
 ---
 
-## Observações
+## 📌 Observações importantes
 
-* O projeto está configurado para análise de currículos em português.
-* É necessário ter uma conta e **API Key válida da Groq** para que a análise funcione.
-* A IA retorna os resultados em formato textual, que é processado e exibido no Streamlit.
+* A análise é realizada **em português**
+* Os resultados são sugestões baseadas em IA, não decisões finais
+* O projeto pode ser facilmente expandido para:
+
+  * mais currículos
+  * outros formatos de arquivo
+  * novos critérios de avaliação
+  * novo comportamento do LLM
 
 ---
 
-## Autor
+## 👨‍💻 Autor
 
-Desenvolvido por [Pablo Dantas](https://www.linkedin.com/in/pablodantasevangelista/)
+Desenvolvido por **Pablo Dantas**
+🔗 [LinkedIn](https://www.linkedin.com/in/pablodantasevangelista/)
 
----
