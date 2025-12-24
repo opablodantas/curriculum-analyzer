@@ -1,23 +1,31 @@
 import streamlit as st
-from dotenv import load_dotenv
 from groq import Groq
 import fitz  # PyMuPDF
 import os
 import re
 
 # =========================
-# Configurações iniciais
+# Configuração da Página
 # =========================
-load_dotenv()
+st.set_page_config(
+    page_title="Currículo Analytics",
+    layout="wide"
+)
 
-st.set_page_config(page_title="Currículo Analytics", layout="wide")
 st.title("📄 Currículo Analytics - Triagem Inteligente com IA")
-st.markdown("Auxílio ao RH na seleção de currículos com análise automatizada e comparativa.")
-
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+st.markdown(
+    "Auxílio ao RH na seleção de currículos com análise automatizada e comparativa."
+)
 
 # =========================
-# Funções
+# 🔑 Chave da API (Streamlit Secrets)
+# =========================
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+
+client = Groq(api_key=GROQ_API_KEY)
+
+# =========================
+# Funções Auxiliares
 # =========================
 @st.cache_data
 def extrair_texto_pdf_bytes(pdf_file_bytes):
@@ -28,6 +36,7 @@ def extrair_texto_pdf_bytes(pdf_file_bytes):
             texto += page.get_text()
     return texto
 
+
 @st.cache_data
 def extrair_texto_pdf_arquivo(caminho):
     texto = ""
@@ -35,6 +44,7 @@ def extrair_texto_pdf_arquivo(caminho):
     for page in doc:
         texto += page.get_text()
     return texto
+
 
 def analisar_curriculos(vaga_titulo, vaga_descricao, curriculos):
     prompt = f"""
@@ -74,38 +84,54 @@ CURRÍCULOS:
 
     return response.choices[0].message.content.strip()
 
-# =========================
-# Vagas
-# =========================
-pasta_vagas = "vagas"
-arquivos_vaga = [f for f in os.listdir(pasta_vagas) if f.endswith(".pdf")]
 
+# =========================
+# Sidebar - Seleção da Vaga
+# =========================
 st.sidebar.title("🧾 Seleção de Vaga")
-arquivo_vaga = st.sidebar.selectbox("Selecione a vaga (PDF):", arquivos_vaga)
 
-vaga_titulo = os.path.splitext(arquivo_vaga)[0].replace("_", " ").title()
+pasta_vagas = "vagas"
+arquivos_vaga = [
+    f for f in os.listdir(pasta_vagas) if f.endswith(".pdf")
+]
+
+arquivo_vaga = st.sidebar.selectbox(
+    "Selecione a vaga (PDF):",
+    arquivos_vaga
+)
+
+vaga_titulo = (
+    os.path.splitext(arquivo_vaga)[0]
+    .replace("_", " ")
+    .title()
+)
+
 vaga_caminho = os.path.join(pasta_vagas, arquivo_vaga)
 vaga_descricao = extrair_texto_pdf_arquivo(vaga_caminho)
 
 # =========================
-# Upload de currículos
+# Upload dos Currículos
 # =========================
 st.sidebar.markdown("---")
 st.sidebar.markdown("📤 Faça upload de até **3 currículos em PDF**")
 
 col1, col2, col3 = st.columns(3)
+
 with col1:
     pdf1 = st.file_uploader("PDF 1", type="pdf")
+
 with col2:
     pdf2 = st.file_uploader("PDF 2", type="pdf")
+
 with col3:
     pdf3 = st.file_uploader("PDF 3", type="pdf")
 
 curriculos = []
+
 for idx, pdf in enumerate([pdf1, pdf2, pdf3]):
     if pdf:
         texto = extrair_texto_pdf_bytes(pdf.read())
-        curriculos.append((f"Candidato {idx+1}", texto))
+        curriculos.append((f"Candidato {idx + 1}", texto))
 
 # =========================
 # Execução da IA
@@ -119,6 +145,7 @@ if vaga_descricao and curriculos:
                 curriculos
             )
 
+            # Remove qualquer resquício de tags
             resultado = re.sub(r"<[^>]+>", "", resultado)
 
             st.markdown("### 🧠 Resultado da IA")
@@ -126,10 +153,12 @@ if vaga_descricao and curriculos:
 else:
     st.info("Selecione uma vaga e envie pelo menos um currículo.")
 
-
-
+# =========================
+# Rodapé
+# =========================
 st.markdown("---")
 st.markdown(
-    'Projeto desenvolvido por [Pablo Dantas](https://www.linkedin.com/in/pablodantasevangelista/)',
+    'Projeto desenvolvido por '
+    '[Pablo Dantas](https://www.linkedin.com/in/pablodantasevangelista/)',
     unsafe_allow_html=True
 )
